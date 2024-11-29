@@ -1,4 +1,5 @@
-name: Provision t3.micro EC2on:
+name: Provision t3.micro EC2
+on:
   workflow_dispatch:
     inputs:
       ec2-name:
@@ -11,9 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -24,13 +22,14 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_wrapper: false
-      - name: Terraform Apply
-        id:   apply
+      - name: Initialize Terraform
+        run: terraform init
+      - name: Validate Terraform Configuration
+        run: terraform validate
+      - name: Plan Terraform Deployment
+        run: terraform plan -out=tfplan
         env:
-          TF_VAR_ec2_name:  "${{ github.event.inputs.ec2-name }}"
-        run: |
-         # cd tf-example/
-          terraform init
-          terraform validate
-          terraform plan 
-          terraform apply -auto-approve
+          TF_VAR_ec2_name: "${{ github.event.inputs.ec2-name }}"
+      - name: Apply Terraform Plan
+        run: terraform apply tfplan
+
